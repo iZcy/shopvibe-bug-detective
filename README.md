@@ -2,7 +2,9 @@
 
 A broken e-commerce app. Your mission: find every bug by adding logging.
 
-## Setup
+---
+
+## Local Setup
 
 1. Clone this repo
 2. Copy `.env.example` to `server/.env` and fill in your MongoDB Atlas URI (and optional GA4 keys)
@@ -25,6 +27,74 @@ cd client && npm run dev
 ```
 
 6. Open http://localhost:5173
+
+---
+
+## Production Deployment
+
+### 1. MongoDB Atlas
+
+1. Go to https://cloud.mongodb.com and create a free cluster (M0 shared)
+2. Under **Database Access**, create a database user (user + password)
+3. Under **Network Access**, add `0.0.0.0/0` to allow connections from anywhere
+4. Under **Databases** → your cluster → **Connect** → **Drivers**, copy the connection string
+5. It looks like: `mongodb+srv://<user>:<password>@<cluster>.mongodb.net/shopvibe?retryWrites=true&w=majority`
+6. You'll use this URI in Railway's environment variables
+
+### 2. Railway (Backend)
+
+1. Go to https://railway.app and create a new project
+2. Choose **Deploy from GitHub repo** → select this repo
+3. Add a `ROOT` variable: `server` (tells Railway the server lives inside the `server/` folder)
+4. Set these environment variables in Railway:
+
+| Variable | Value |
+|----------|-------|
+| `MONGODB_URI` | Your MongoDB Atlas connection string |
+| `CORS_ORIGIN` | Your Netlify frontend URL (e.g. `https://shopvibe.netlify.app`) |
+| `GA_MEASUREMENT_ID` | (optional) GA4 Measurement ID |
+| `GA_API_SECRET` | (optional) GA4 API Secret |
+
+5. **Deploy**. Railway will auto-detect the `start` script in `server/package.json`
+6. Once deployed, Railway gives you a URL like `https://shopvibe-production.up.railway.app` — copy this for Netlify
+
+### 3. Netlify (Frontend)
+
+1. Go to https://netlify.com and create a new site from Git
+2. Select this repo
+3. Set build settings:
+
+| Setting | Value |
+|---------|-------|
+| Base directory | `client` |
+| Build command | `npm run build` |
+| Publish directory | `client/dist` |
+
+4. Add these environment variables:
+
+| Variable | Value |
+|----------|-------|
+| `VITE_API_URL` | Your Railway backend URL (e.g. `https://shopvibe-production.up.railway.app`) |
+| `VITE_GA_MEASUREMENT_ID` | (optional) GA4 Measurement ID |
+| `VITE_GA_API_SECRET` | (optional) GA4 API Secret |
+
+5. **Deploy**. The `_redirects` file handles client-side routing automatically
+6. Copy your Netlify URL (e.g. `https://shopvibe.netlify.app`) and set it as `CORS_ORIGIN` in Railway's environment variables, then redeploy Railway
+
+### 4. Environment Variable Summary
+
+**Railway (server):**
+```
+MONGODB_URI=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/shopvibe?retryWrites=true&w=majority
+CORS_ORIGIN=https://<your-netlify-site>.netlify.app
+```
+
+**Netlify (client):**
+```
+VITE_API_URL=https://<your-railway-site>.up.railway.app
+```
+
+---
 
 ## The Challenge
 
